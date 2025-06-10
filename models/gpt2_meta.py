@@ -4,8 +4,8 @@ import torch.nn.functional as F
 
 # Import existing components
 from torch_circuit import Circuit, SaveInput, GetInput, StartBlock, EndBlock
-from layers.attention import CausalMultiHeadAttention
-from layers.positionals import RotaryPositionalEmbedding
+from models.attention import CausalMultiHeadAttention
+from models.positionals import RotaryPositionalEmbedding
 
 
 class CrossAttention(nn.Module):

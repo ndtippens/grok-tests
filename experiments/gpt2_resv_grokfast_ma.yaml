@@ -1,21 +1,18 @@
-# Grokfast only experiment: No L1 regularization, Grokfast enabled
+# Grokfast MA experiment: GPT2ResV model with Grokfast MA enabled
 dataset:
   name: mod_division_dataset
   frac_train: 0.4
   p: 96
 
 model:
-  name: grokk_model
-  transformer_config:
-    max_length: 5
-    heads: 4
-    hidden_dim: 128
-    attn_dim: 32
-    intermediate_dim: 512
-    num_blocks: 2
-    block_repeats: 1
-    dropout: 0.1
-    pre_norm: true
+  name: gpt2_resv
+  d_model: 128
+  num_heads: 4
+  num_layers: 2
+  d_ff: 512
+  max_seq_len: 5
+  dropout: 0.1
+  share_values: false  # ResFormer mode
   l1_weight: 0.0  # No L1 regularization
   checkpoint_path: null
   strict_load: true
@@ -31,15 +28,15 @@ train:
   eval_batches: 8
   max_steps: 3000
   use_grokfast: true  # Grokfast enabled
-  grokfast_type: ema
-  grokfast_alpha: 0.98
+  grokfast_type: ma   # Moving Average variant
+  grokfast_window_size: 100
   grokfast_lamb: 2.0
 
 tensorboard:
   use_tensorboard: true
-  log_dir: runs/grokfast_only
+  log_dir: results/gpt2_resv_grokfast_ma/tensorboard
 
 wandb:
   use_wandb: false
   wandb_project: grokking_experiments
-  wandb_name: grokfast_only
+  wandb_name: gpt2_resv_grokfast_ma

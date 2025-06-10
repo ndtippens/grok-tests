@@ -1,4 +1,4 @@
-# Grokfast MA only experiment: No L1 regularization, Grokfast MA enabled (grokk_model)
+# Grokfast only experiment: No L1 regularization, Grokfast enabled
 dataset:
   name: mod_division_dataset
   frac_train: 0.4
@@ -31,15 +31,15 @@ train:
   eval_batches: 8
   max_steps: 3000
   use_grokfast: true  # Grokfast enabled
-  grokfast_type: ma   # Moving Average variant
-  grokfast_window_size: 100
+  grokfast_type: ema
+  grokfast_alpha: 0.98
   grokfast_lamb: 2.0
 
 tensorboard:
   use_tensorboard: true
-  log_dir: runs/grokk_model_grokfast_ma
+  log_dir: results/grokfast_only/tensorboard
 
 wandb:
   use_wandb: false
   wandb_project: grokking_experiments
-  wandb_name: grokk_model_grokfast_ma
+  wandb_name: grokfast_only

@@ -1,16 +1,13 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from grokk_replica.datasets import AbstractDataset
-from grokk_replica.utils import combine_logs, parameter_norm
-from grokk_replica.load_objs import load_item
+from data.datasets import AbstractDataset
+from utils.utils import combine_logs, parameter_norm
+from utils.load_objs import load_item
 from torch.utils.data import IterableDataset, DataLoader
 from tqdm.auto import tqdm
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from torch.utils.tensorboard.writer import SummaryWriter
 import torch
-from grokk_replica.grokfast import gradfilter_ema, gradfilter_ma
+from utils.grokfast import gradfilter_ema, gradfilter_ma
 import torch.nn.functional as F
 
 def grokk_loss_fn(model, x, y):
@@ -55,7 +52,7 @@ def train(config):
     
     # Setup TensorBoard writer
     use_tensorboard = config.get('tensorboard', {}).get('use_tensorboard', True)
-    log_dir = config.get('tensorboard', {}).get('log_dir', 'runs')
+    log_dir = config.get('tensorboard', {}).get('log_dir', 'results/default')
     writer = SummaryWriter(log_dir=log_dir) if use_tensorboard else None
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.mps.is_available() else 'cpu')
@@ -136,7 +133,7 @@ def train(config):
         writer.close()
 
 
-@hydra.main(config_path="../config", config_name="train_grokk", version_base="1.2")
+@hydra.main(config_path="experiments", config_name="train_grokk", version_base="1.2")
 def main(cfg : DictConfig):
     cfg = OmegaConf.to_container(cfg)
     train(cfg)

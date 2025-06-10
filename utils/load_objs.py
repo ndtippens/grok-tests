@@ -1,11 +1,7 @@
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import torch
-from grokk_replica.datasets import ModSumDataset, ModSubtractDataset, ModDivisonDataset, PermutationGroup, VarBindingDataset
-from grokk_replica.grokk_model import GrokkModel
-from grokk_replica.utils import convert_path
+from data.datasets import ModSumDataset, ModSubtractDataset, ModDivisonDataset, PermutationGroup
+from models.grokk_model import GrokkModel
+from utils.utils import convert_path
 registry = {}
 
 def register(name):
@@ -38,10 +34,6 @@ def load_mod_division_dataset(config, verbose=True):
 @register('permutation_group_dataset')
 def load_permutation_group_dataset(config, verbose=True):
     return PermutationGroup(config['k'], config['frac_train'])
-
-@register('varbinding_dataset')
-def load_varbinding_dataset(config, verbose=True):
-    return VarBindingDataset(config['csv_path'], config['frac_train'])
 
 @register('grokk_model')
 def load_grokk_model(config, vocab_size, out_size, device, verbose=True):

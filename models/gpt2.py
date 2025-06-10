@@ -3,8 +3,8 @@ import torch.nn as nn
 
 # Import Circuit and attention layers
 from torch_circuit import Circuit, SaveInput, GetInput, StartBlock, EndBlock
-from layers.attention import CausalSelfAttention
-from layers.positionals import RotaryPositionalEmbedding
+from models.attention import CausalSelfAttention
+from models.positionals import RotaryPositionalEmbedding
 
 class GPT2Model(nn.Module):
     """Simple GPT-2 model implementation using Circuit with repeatable blocks."""

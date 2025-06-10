@@ -33,7 +33,7 @@ train:
 
 tensorboard:
   use_tensorboard: true
-  log_dir: runs/gpt2_grokfast_ma
+  log_dir: results/gpt2_grokfast_ma/tensorboard
 
 wandb:
   use_wandb: false

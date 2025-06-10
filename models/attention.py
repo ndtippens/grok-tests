@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import math
 from typing import Optional
 from torch import Tensor
-from layers.positionals import RotaryPositionalEmbedding
+from models.positionals import RotaryPositionalEmbedding
 
 
 

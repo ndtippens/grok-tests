@@ -37,7 +37,7 @@ train:
 
 tensorboard:
   use_tensorboard: true
-  log_dir: runs/baseline
+  log_dir: results/baseline/tensorboard
 
 wandb:
   use_wandb: false

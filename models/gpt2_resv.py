@@ -3,7 +3,7 @@ import torch.nn as nn
 
 # Import Circuit and attention layers
 from torch_circuit import Circuit, SaveInput, GetInput, StartBlock, EndBlock
-from layers.resv_attention import ResVAttention
+from models.resv_attention import ResVAttention
 
 
 class GPT2ResVModel(nn.Module):

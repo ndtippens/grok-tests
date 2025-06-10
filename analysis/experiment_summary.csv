@@ -1,7 +1,0 @@
-Experiment,Grokking Step,Final Train Acc,Final Val Acc,Grokking Speed
-Baseline,Not Achieved,0.9766,0.9617,None
-L1 Only,Not Achieved,0.9961,0.9702,None
-Grokfast Only,Not Achieved,0.9961,0.9846,None
-Grokfast Ma Only,2400.0,1.0000,1.0000,Fast
-L1 Plus Grokfast,2600.0,0.9980,1.0000,Fast
-L1 Plus Grokfast Ma,2200.0,0.9961,1.0000,Fast

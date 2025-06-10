@@ -1,0 +1,33 @@
+dataset:
+  name: mod_division_dataset
+  frac_train: 0.4
+  p: 96
+
+model:
+  name: gpt2_meta
+  d_model: 128
+  num_heads: 4
+  num_layers: 2
+  d_ff: 512
+  max_seq_len: 5
+  dropout: 0.1
+
+train:
+  num_workers: 0
+  bsize: 512
+  lr: 0.0001
+  weight_decay: 1.0
+  betas: [0.9, 0.98]
+  warmup_steps: 10
+  eval_every: 100
+  eval_batches: 8
+  max_steps: 20000
+  grokfast_alpha: 0.98
+  grokfast_lamb: 2.0
+
+tensorboard:
+  use_tensorboard: true
+  log_dir: results/train_grokk/tensorboard
+
+wandb:
+  use_wandb: false

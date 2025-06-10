@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from layers.positionals import RotaryPositionalEmbedding
+from models.positionals import RotaryPositionalEmbedding
 from utils.BitLinear import BitLinear
 
 

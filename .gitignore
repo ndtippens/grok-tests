@@ -2,7 +2,4 @@
 .DS_Store
 __pycache__/
 wandb/
-outputs/
 results/
-runs/
-scripts/runs/
