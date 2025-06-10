@@ -65,7 +65,7 @@ class BitLinear(nn.Linear):
         super().__init__(in_features, out_features, bias, *args, **kwargs)
         self.norm = SimpleRMSNorm(in_features)
         
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, input: Tensor) -> Tensor:
         """
         Forward pass of the BitLinear layer.
 
@@ -76,7 +76,7 @@ class BitLinear(nn.Linear):
             Tensor: The output tensor.
         """
         w = self.weight
-        x_norm = self.norm(x)
+        x_norm = self.norm(input)
 
         # STE (Straight-Through Estimator) using detach
         x_quant = x_norm + (activation_quant(x_norm) - x_norm).detach()

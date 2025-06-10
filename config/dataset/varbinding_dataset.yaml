@@ -1,0 +1,3 @@
+name: varbinding_dataset
+csv_path: /Users/ntippens/Documents/GitHub/grokking/config/dataset/varbinding_10000.csv
+frac_train: 0.5

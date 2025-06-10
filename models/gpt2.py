@@ -40,7 +40,7 @@ class GPT2Model(nn.Module):
 
             # Pre-norm and causal attention
             nn.LayerNorm(d_model),
-            CausalSelfAttention(d_model, num_heads, max_seq_len, head_dim=max_seq_len//num_heads),
+            CausalSelfAttention(d_model, num_heads, max_seq_len, head_dim=d_model//num_heads),
             nn.Dropout(dropout),
 
             # Add first residual connection

@@ -2,6 +2,8 @@ import abc
 import random
 from itertools import permutations
 from typing import Set
+import csv
+import os
 
 class AbstractDataset(abc.ABC):
     def __init__(self, group_elements1: Set, group_elements2: Set, frac_train: float):
@@ -78,3 +80,58 @@ class PermutationGroup(AbstractDataset):
 
     def fetch_output(self, a, b):
         return tuple([a[b[i]] for i in range(len(b))])
+
+class VarBindingDataset:
+    def __init__(self, csv_path, group_elements1=None, group_elements2=None, frac_train=0.5):
+        self.csv_path = csv_path
+        self.sequences = self._load_sequences()
+        self.frac_train = frac_train
+
+        # Extract all variables and values from the sequences
+        all_vars = set()
+        all_values = set()
+
+        for seq in self.sequences[:100]:
+            tokens = list(seq)
+            for token in tokens:
+                if token.isalpha():
+                    all_vars.add(token)
+                else:
+                    all_values.add(token)
+
+        self.idx2vocab = all_vars.union(all_values)
+        self.vocab2idx = {vocab: idx for idx, vocab in enumerate(self.idx2vocab)}
+        self.n_vocab = len(self.idx2vocab)
+        self.n_out = len(all_values)
+        idxs = list(range(len(self.sequences)))
+        random.shuffle(idxs)
+        self.train_pairs, self.val_pairs = idxs[:int(len(idxs)*frac_train)], idxs[int(len(idxs)*frac_train):]
+
+    def _load_sequences(self):
+        """Load variable binding sequences from CSV file."""
+        sequences = []
+
+        with open(self.csv_path, 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if not row:  # Skip empty rows
+                    continue
+
+                sequences.append(row[0])
+
+        return sequences
+
+    def encode(self, sequence):
+        return [self.vocab2idx[item] for item in sequence]
+
+    def fetch_train_example(self):
+        idx = random.choice(self.train_pairs)
+        return self.fetch_example(idx)
+
+    def fetch_val_example(self):
+        idx = random.choice(self.val_pairs)
+        return self.fetch_example(idx)
+
+    def fetch_example(self, idx):
+        sequence = self.sequences[idx]
+        return self.encode(sequence[:-1]), self.vocab2idx[sequence[-1]], None

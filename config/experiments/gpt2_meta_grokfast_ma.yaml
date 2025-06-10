@@ -1,21 +1,17 @@
-# Grokfast MA only experiment: No L1 regularization, Grokfast MA enabled (grokk_model)
+# Grokfast MA experiment: GPT2Meta model with Grokfast MA enabled
 dataset:
   name: mod_division_dataset
   frac_train: 0.4
   p: 96
 
 model:
-  name: grokk_model
-  transformer_config:
-    max_length: 5
-    heads: 4
-    hidden_dim: 128
-    attn_dim: 32
-    intermediate_dim: 512
-    num_blocks: 2
-    block_repeats: 1
-    dropout: 0.1
-    pre_norm: true
+  name: gpt2_meta
+  d_model: 128
+  num_heads: 4
+  num_layers: 2
+  d_ff: 512
+  max_seq_len: 5
+  dropout: 0.1
   l1_weight: 0.0  # No L1 regularization
   checkpoint_path: null
   strict_load: true
@@ -37,9 +33,9 @@ train:
 
 tensorboard:
   use_tensorboard: true
-  log_dir: runs/grokk_model_grokfast_ma
+  log_dir: runs/gpt2_meta_grokfast_ma
 
 wandb:
   use_wandb: false
   wandb_project: grokking_experiments
-  wandb_name: grokk_model_grokfast_ma
+  wandb_name: gpt2_meta_grokfast_ma

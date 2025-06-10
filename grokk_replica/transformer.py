@@ -14,11 +14,10 @@ class MultiHeadAttention(nn.Module):
         self.query_proj = nn.Linear(hidden_dim, self.attn_dim*self.heads)
         self.output_proj = nn.Linear(self.attn_dim*self.heads, hidden_dim)
 
-    def forward(self, queries, keys, values, mask, past_kv=None):
+    def forward(self, queries, keys, values, past_kv=None):
         assert keys.shape[1] == values.shape[1], 'keys and values time dimension must match'
         assert past_kv is None or past_kv[0].shape[1] == past_kv[1].shape[1], 'cached keys and values time dimension must match'
         # queries/keys/values = (batch, time, hidden_dim)
-        # mask = (batch, query_time, key_time) - bool tensor, True if should mask
         # past_kv = tuple of (past_k=(batch, time, head, hidden_dim), past_v=(batch, time, head, hidden_dim)) or None
 
         batch, time, _ = queries.shape
@@ -69,15 +68,15 @@ class TransformerBlock(nn.Module):
         self.dropout2 = nn.Dropout(p=dropout)
         self.dropout3 = nn.Dropout(p=dropout)
 
-    def forward(self, x, attn_mask, past_kv=None):
+    def forward(self, x, past_kv=None):
         if not self.pre_norm:
-            attn_output, past_kv = self.attn(x, x, x, attn_mask, past_kv=past_kv)
+            attn_output, past_kv = self.attn(x, x, x, past_kv=past_kv)
             x = self.layer_norm1(self.dropout1(attn_output) + x)
             mlp_out = self.ff2(self.dropout2(F.gelu(self.ff1(x))))
             x = self.layer_norm2(self.dropout3(mlp_out) + x)
         else:
             x_norm1 = self.layer_norm1(x)
-            attn_output, past_kv = self.attn(x_norm1, x_norm1, x_norm1, attn_mask, past_kv=past_kv)
+            attn_output, past_kv = self.attn(x_norm1, x_norm1, x_norm1, past_kv=past_kv)
             x = self.dropout1(attn_output) + x
             x_norm2 = self.layer_norm2(x)
             mlp_out = self.ff2(self.dropout2(F.gelu(self.ff1(x_norm2))))
@@ -103,7 +102,6 @@ class Transformer(nn.Module):
 
     def forward(self, x, past_kvs=None):
         # x = (batch, time)
-        # attn_mask = (batch, query_time, key_time)
         # past_kvs = list of past_kvs for each layer
 
         #attns = []
