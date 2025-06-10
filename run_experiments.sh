@@ -3,11 +3,8 @@
 # Grokking Experiments: L1 Loss and Grokfast Effects
 # This script runs a series of experiments to compare the effects of:
 # 1. Baseline (no L1, no Grokfast)
-# 2. L1 regularization only
 # 3. Grokfast EMA only
 # 4. Grokfast MA only  
-# 5. L1 + Grokfast EMA
-# 6. L1 + Grokfast MA
 
 set -e  # Exit on any error
 
@@ -55,21 +52,15 @@ print_status "Each experiment will run for 50,000 steps"
 # Array of experiment configurations
 experiments=(
     "baseline"
-    "l1_only" 
     "grokfast_only"
     "grokfast_ma_only"
-    "l1_plus_grokfast"
-    "l1_plus_grokfast_ma"
 )
 
 # Array of experiment descriptions
 descriptions=(
     "Baseline (No L1, No Grokfast)"
-    "L1 Regularization Only"
     "Grokfast EMA Only"
     "Grokfast MA Only"
-    "L1 + Grokfast EMA"
-    "L1 + Grokfast MA"
 )
 
 # Function to run a single experiment
@@ -132,15 +123,11 @@ print_status "  - To view results: tensorboard --logdir results/"
 # Generate summary
 print_status "Experiment Summary:"
 echo "1. Baseline: No regularization techniques"
-echo "2. L1 Only: L1 weight = 0.005"
-echo "3. Grokfast EMA: alpha = 0.98, lambda = 2.0"
-echo "4. Grokfast MA: window = 100, lambda = 2.0"
-echo "5. L1 + Grokfast EMA: Combined approach"
-echo "6. L1 + Grokfast MA: Combined approach with MA variant"
+echo "2. Grokfast EMA: alpha = 0.98, lambda = 2.0"
+echo "3. Grokfast MA: window = 100, lambda = 2.0"
 
 print_status "To analyze results, compare validation accuracy curves and grokking onset times"
 print_status "Expected observations:"
-echo "  - L1 regularization should accelerate grokking"
 echo "  - Grokfast should also accelerate grokking"
 echo "  - Combined approaches may show fastest grokking"
 echo "  - EMA vs MA variants may show different convergence patterns"

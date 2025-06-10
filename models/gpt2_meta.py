@@ -169,7 +169,7 @@ class GPT2MetaModel(nn.Module):
         # For now, we'll create a simplified version without frames for train.py compatibility
         # Main sequence embeddings
         self.token_embedding = nn.Embedding(vocab_size, d_model)
-        self.position_embedding = RotaryPositionalEmbedding(d_model)
+        #self.position_embedding = RotaryPositionalEmbedding(d_model)
         self.dropout = nn.Dropout(dropout)
 
         # Simplified transformer using Circuit (no frames for now)
@@ -237,10 +237,10 @@ class GPT2MetaModel(nn.Module):
 
         # Token and position embeddings
         token_embeds = self.token_embedding(input_ids)
-        position_embeds = self.position_embedding(position_ids)
+        #position_embeds = self.position_embedding(position_ids)
 
         # Combine embeddings
-        x = self.dropout(token_embeds + position_embeds)
+        x = self.dropout(token_embeds)
 
         # Pass through transformer blocks
         x = self.transformer(x)

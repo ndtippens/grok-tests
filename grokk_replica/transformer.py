@@ -101,7 +101,7 @@ class Transformer(nn.Module):
         if self.pre_norm:
             self.norm = nn.LayerNorm(hidden_dim)
 
-    def forward(self, x, attn_mask, past_kvs=None):
+    def forward(self, x, past_kvs=None):
         # x = (batch, time)
         # attn_mask = (batch, query_time, key_time)
         # past_kvs = list of past_kvs for each layer
@@ -116,7 +116,7 @@ class Transformer(nn.Module):
         step = 0
         for _ in range(self.block_repeats):
             for i in range(len(self.transformer_blocks)):
-                x, past_kv = self.transformer_blocks[i](x, attn_mask, past_kv=past_kvs[step] if past_kvs is not None else None)
+                x, past_kv = self.transformer_blocks[i](x, past_kv=past_kvs[step] if past_kvs is not None else None)
                 #attns.append(attn)
                 new_past_kvs.append(past_kv)
                 step += 1

@@ -41,13 +41,8 @@ def load_permutation_group_dataset(config, verbose=True):
 
 @register('grokk_model')
 def load_grokk_model(config, vocab_size, out_size, device, verbose=True):
-    # Extract l1_weight from config, defaulting to 0.0 if not present
-    l1_weight = config.get('l1_weight', 0.0)
-    # Copy transformer_config and ensure l1_weight is not present
-    transformer_config = dict(config['transformer_config'])
-    #transformer_config.pop('l1_weight', None)
-    # Create model with l1_weight
-    model = GrokkModel(transformer_config, vocab_size, out_size, device, l1_weight=l1_weight).to(device)
+    transformer_config = config['transformer_config']
+    model = GrokkModel(transformer_config, vocab_size, out_size, device).to(device)
     # Optionally load checkpoint
     checkpoint_path = config.get('checkpoint_path')
     if checkpoint_path is not None:
@@ -67,9 +62,9 @@ def register_model_loaders():
     from models.gpt2 import GPT2Model
     from models.gpt2_resv import GPT2ResVModel
     from models.gpt2_meta import GPT2MetaModel
-    from models.tokenformer import Tokenformer
+    #from models.tokenformer import Tokenformer
 
-    @register('gpt2_model')
+    @register('gpt2')
     def load_gpt2_model(config, vocab_size, out_size, device, verbose=True):
         model = GPT2Model(
             vocab_size=vocab_size,
@@ -82,7 +77,7 @@ def register_model_loaders():
         ).to(device)
         return model
 
-    @register('gpt2_resv_model')
+    @register('gpt2_resv')
     def load_gpt2_resv_model(config, vocab_size, out_size, device, verbose=True):
         model = GPT2ResVModel(
             vocab_size=vocab_size,
@@ -93,6 +88,19 @@ def register_model_loaders():
             max_seq_len=config.get('max_seq_len', 1024),
             dropout=config.get('dropout', 0.1),
             share_values=config.get('share_values', False)
+        ).to(device)
+        return model
+
+    @register('gpt2_meta')
+    def load_gpt2_meta_model(config, vocab_size, out_size, device, verbose=True):
+        model = GPT2MetaModel(
+            vocab_size=vocab_size,
+            d_model=config.get('d_model', 768),
+            num_heads=config.get('num_heads', 12),
+            num_layers=config.get('num_layers', 12),
+            d_ff=config.get('d_ff', 3072),
+            max_seq_len=config.get('max_seq_len', 1024),
+            dropout=config.get('dropout', 0.1)
         ).to(device)
         return model
 

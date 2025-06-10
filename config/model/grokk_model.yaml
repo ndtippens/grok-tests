@@ -9,6 +9,5 @@ transformer_config:
   block_repeats: 1
   dropout: 0.1
   pre_norm: true
-l1_weight: 0.005
 checkpoint_path: null
 strict_load: true

@@ -1,15 +1,13 @@
 defaults:
   - dataset: mod_division_dataset
-  - model: grokk_model
+  - model: gpt2_meta
   - _self_
 
 dataset:
   frac_train: 0.4
   p: 96
 
-model:
-  transformer_config:
-    pre_norm: true
+# model config will be loaded from defaults
 
 train:
   num_workers: 0

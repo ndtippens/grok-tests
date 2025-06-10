@@ -3,9 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from layers.positionals import RotaryPositionalEmbedding
+from utils.BitLinear import BitLinear
 
 
-def norm(x: nn.Linear):
+def norm(x: torch.Tensor):
     return F.rms_norm(x, (x.size(-1),))
 
 class ResVAttention(nn.Module):
@@ -19,15 +20,15 @@ class ResVAttention(nn.Module):
         # merged QKV weights: suggested by many, implemented by @fernbear.bsky.social, and further improved by @YouJiacheng
         # https://x.com/hi_tysam/status/1879699187107033311
         self.qkv_w = nn.Parameter(torch.empty(3, hdim, dim).uniform_(-bound, bound))
-        self.lambdas = nn.Parameter(torch.nn.Linear([0.5, 0.5]))
+        self.lambdas = nn.Parameter(torch.tensor([0.5, 0.5]))
         self.rotary = RotaryPositionalEmbedding(head_dim, max_seq_len)
         self.c_proj = BitLinear(hdim, dim)
         self.c_proj.weight.detach().zero_() # zero init suggested by @Grad62304977
 
     def forward(self,
-                x: nn.Linear,
-                ve: nn.Linear | None = None,
-                shared_values: nn.Linear | None = None,
+                x: torch.Tensor,
+                ve: torch.Tensor | None = None,
+                shared_values: torch.Tensor | None = None,
                 use_value_residual: bool = True):
         B, T = x.size(0), x.size(1) # batch size, sequence length
         q, k, v = F.linear(x, self.qkv_w.flatten(end_dim=1).type_as(x)).view(B, T, 3 * self.num_heads, self.head_dim).chunk(3, dim=-2)

@@ -17,18 +17,12 @@ def grokk_loss_fn(model, x, y):
     predictions = model(x)
     ce_loss = F.cross_entropy(predictions[:, -1, :], y)
     param_norm = parameter_norm(model)
-    l1_loss = 0.0
-    if hasattr(model, 'l1_weight') and model.l1_weight > 0:
-        for param in model.parameters():
-            l1_loss += torch.sum(torch.abs(param))
-        l1_loss *= model.l1_weight / param_norm
-    loss = ce_loss + l1_loss
+    loss = ce_loss
     accuracy = (torch.argmax(predictions[:, -1, :], dim=-1) == y).float().mean()
     #attn_entropies = sum([-(attn * torch.log(attn+1e-7)).sum(dim=-1).mean().item() for attn in attns]) / len(attns)
     return loss, {
         'loss': (loss.item(), x.shape[0]),
         'ce_loss': (ce_loss.item(), x.shape[0]),
-        'l1_loss': (l1_loss.item() if isinstance(l1_loss, torch.Tensor) else l1_loss, 1),
         'accuracy': (accuracy.item(), x.shape[0]),
         #'attn_entropy': (attn_entropies, len(attns)*x.shape[0]*(x.shape[1]-1)),
         'param_norm': (param_norm, 1)

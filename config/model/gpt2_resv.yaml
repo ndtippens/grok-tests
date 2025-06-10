@@ -1,0 +1,10 @@
+name: gpt2_resv
+d_model: 128
+num_heads: 4
+num_layers: 2
+d_ff: 512
+max_seq_len: 5
+dropout: 0.1
+share_values: false
+checkpoint_path: null
+strict_load: true
