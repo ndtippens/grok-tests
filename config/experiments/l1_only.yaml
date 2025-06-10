@@ -16,7 +16,7 @@ model:
     block_repeats: 1
     dropout: 0.1
     pre_norm: true
-  l1_weight: 0.005  # L1 regularization enabled
+  l1_weight: 0.001  # L1 regularization enabled
   checkpoint_path: null
   strict_load: true
 
@@ -29,7 +29,7 @@ train:
   warmup_steps: 10
   eval_every: 100
   eval_batches: 8
-  max_steps: 5000
+  max_steps: 3000
   use_grokfast: false  # No Grokfast
   grokfast_type: ema
   grokfast_alpha: 0.98

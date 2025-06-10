@@ -5,7 +5,6 @@ import torch.nn as nn
 from torch_circuit import Circuit, SaveInput, GetInput, StartBlock, EndBlock
 from layers.attention import CausalSelfAttention
 from layers.positionals import RotaryPositionalEmbedding
-from utils.BitLinear import BitLinear
 
 class GPT2Model(nn.Module):
     """Simple GPT-2 model implementation using Circuit with repeatable blocks."""
@@ -54,9 +53,9 @@ class GPT2Model(nn.Module):
             nn.LayerNorm(d_model),
 
             # MLP layers directly in the Circuit
-            BitLinear(d_model, d_ff, bias=True),  # c_fc
+            nn.Linear(d_model, d_ff, bias=True),  # c_fc
             nn.GELU(),  # GPT-2 uses GELU activation
-            BitLinear(d_ff, d_model, bias=True),  # c_proj
+            nn.Linear(d_ff, d_model, bias=True),  # c_proj
             nn.Dropout(dropout),
 
             # Add second residual connection
@@ -69,7 +68,7 @@ class GPT2Model(nn.Module):
         )
 
         # Output projection
-        self.lm_head = BitLinear(d_model, vocab_size, bias=False)
+        self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
 
         # Tie weights between token embedding and lm_head (like GPT-2)
         self.lm_head.weight = self.token_embedding.weight
@@ -79,7 +78,7 @@ class GPT2Model(nn.Module):
 
     def _init_weights(self, module):
         """Initialize weights following GPT-2 initialization."""
-        if isinstance(module, BitLinear):
+        if isinstance(module, nn.Linear):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)

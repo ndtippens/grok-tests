@@ -4,7 +4,6 @@ import torch.nn.functional as F
 import math
 from typing import Optional
 from torch import Tensor
-from utils.BitLinear import BitLinear
 from layers.positionals import RotaryPositionalEmbedding
 
 
@@ -25,7 +24,7 @@ class CausalSelfAttention(nn.Module):
         self.qkv_w = nn.Parameter(torch.empty(3, hdim, dim).uniform_(-bound, bound))
         self.lambdas = nn.Parameter(torch.tensor([0.5, 0.5]))
         self.rotary = RotaryPositionalEmbedding(head_dim, max_seq_len)
-        self.c_proj = BitLinear(hdim, dim)
+        self.c_proj = nn.Linear(hdim, dim)
         self.c_proj.weight.detach().zero_() # zero init suggested by @Grad62304977
 
     def forward(self, x: Tensor, ve: Tensor | None = None):
@@ -67,10 +66,10 @@ class MultiHeadAttention(nn.Module):
         self.num_heads = num_heads
         self.d_k = d_model // num_heads
 
-        self.w_q = BitLinear(d_model, d_model)
-        self.w_k = BitLinear(d_model, d_model)
-        self.w_v = BitLinear(d_model, d_model)
-        self.w_o = BitLinear(d_model, d_model)
+        self.w_q = nn.Linear(d_model, d_model)
+        self.w_k = nn.Linear(d_model, d_model)
+        self.w_v = nn.Linear(d_model, d_model)
+        self.w_o = nn.Linear(d_model, d_model)
 
         self.dropout = nn.Dropout(dropout)
 
@@ -110,9 +109,9 @@ class CausalMultiHeadAttention(nn.Module):
         self.max_seq_len = max_seq_len
 
         # Combined QKV projection like HF GPT-2 (c_attn)
-        self.c_attn = BitLinear(d_model, 3 * d_model, bias=True)
+        self.c_attn = nn.Linear(d_model, 3 * d_model, bias=True)
         # Output projection (c_proj)
-        self.c_proj = BitLinear(d_model, d_model, bias=True)
+        self.c_proj = nn.Linear(d_model, d_model, bias=True)
 
         self.dropout = nn.Dropout(dropout)
 

@@ -29,7 +29,7 @@ train:
   warmup_steps: 10
   eval_every: 100
   eval_batches: 8
-  max_steps: 5000
+  max_steps: 3000
   use_grokfast: false  # No Grokfast
   grokfast_type: ema
   grokfast_alpha: 0.98

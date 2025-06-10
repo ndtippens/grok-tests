@@ -6,7 +6,6 @@ import torch.nn.functional as F
 from torch_circuit import Circuit, SaveInput, GetInput, StartBlock, EndBlock
 from layers.attention import CausalMultiHeadAttention
 from layers.positionals import RotaryPositionalEmbedding
-from utils.BitLinear import BitLinear
 
 
 class CrossAttention(nn.Module):
@@ -22,10 +21,10 @@ class CrossAttention(nn.Module):
         self.max_seq_len = max_seq_len
 
         # Query from x, Key and Value from w
-        self.w_q = BitLinear(d_model, d_model, bias=False)
-        self.w_k = BitLinear(d_model, d_model, bias=False)
-        self.w_v = BitLinear(d_model, d_model, bias=False)
-        self.w_o = BitLinear(d_model, d_model, bias=False)
+        self.w_q = nn.Linear(d_model, d_model, bias=False)
+        self.w_k = nn.Linear(d_model, d_model, bias=False)
+        self.w_v = nn.Linear(d_model, d_model, bias=False)
+        self.w_o = nn.Linear(d_model, d_model, bias=False)
 
         # Causal mask for cross-attention
         self.register_buffer('causal_mask', torch.tril(torch.ones(max_seq_len, max_seq_len)))
@@ -68,9 +67,9 @@ class MetaTransformerBlock(nn.Module):
         # Main sequence self-attention and feed-forward
         self.main_attn = CausalMultiHeadAttention(d_model, num_heads, dropout, max_seq_len)
         self.main_ff = nn.Sequential(
-            BitLinear(d_model, d_ff, bias=True),
+            nn.Linear(d_model, d_ff, bias=True),
             nn.GELU(),
-            BitLinear(d_ff, d_model, bias=True),
+            nn.Linear(d_ff, d_model, bias=True),
             nn.Dropout(dropout)
         )
 
@@ -85,9 +84,9 @@ class MetaTransformerBlock(nn.Module):
             # Feed-forward for each frame
             self.frame_ff = nn.ModuleList([
                 nn.Sequential(
-                    BitLinear(d_model, d_ff, bias=True),
+                    nn.Linear(d_model, d_ff, bias=True),
                     nn.GELU(),
-                    BitLinear(d_ff, d_model, bias=True),
+                    nn.Linear(d_ff, d_model, bias=True),
                     nn.Dropout(dropout)
                 ) for _ in range(num_frames)
             ])
@@ -193,9 +192,9 @@ class GPT2MetaModel(nn.Module):
 
             # Pre-norm and feed-forward
             nn.LayerNorm(d_model),
-            BitLinear(d_model, d_ff, bias=True),
+            nn.Linear(d_model, d_ff, bias=True),
             nn.GELU(),
-            BitLinear(d_ff, d_model, bias=True),
+            nn.Linear(d_ff, d_model, bias=True),
             nn.Dropout(dropout),
 
             # Add second residual connection
@@ -208,7 +207,7 @@ class GPT2MetaModel(nn.Module):
         )
 
         # Output projection
-        self.lm_head = BitLinear(d_model, vocab_size, bias=False)
+        self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
 
         # Tie weights
         self.lm_head.weight = self.token_embedding.weight
@@ -218,7 +217,7 @@ class GPT2MetaModel(nn.Module):
 
     def _init_weights(self, module):
         """Initialize weights following GPT-2 initialization."""
-        if isinstance(module, (nn.Linear, BitLinear)):
+        if isinstance(module, (nn.Linear, nn.Linear)):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if hasattr(module, 'bias') and module.bias is not None:
                 torch.nn.init.zeros_(module.bias)

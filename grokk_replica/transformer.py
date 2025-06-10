@@ -3,13 +3,12 @@ import torch.nn.functional as F
 import torch
 import math
 
-
 class MultiHeadAttention(nn.Module):
     def __init__(self, heads, hidden_dim, attn_dim, dropout=0.1):
         super(MultiHeadAttention, self).__init__()
         self.heads = heads
         self.attn_dim = attn_dim
-        self.dropout = nn.Dropout(p=dropout)
+        self.dropout = dropout
         self.key_proj = nn.Linear(hidden_dim, self.attn_dim*self.heads)
         self.val_proj = nn.Linear(hidden_dim, self.attn_dim*self.heads)
         self.query_proj = nn.Linear(hidden_dim, self.attn_dim*self.heads)
@@ -21,25 +20,41 @@ class MultiHeadAttention(nn.Module):
         # queries/keys/values = (batch, time, hidden_dim)
         # mask = (batch, query_time, key_time) - bool tensor, True if should mask
         # past_kv = tuple of (past_k=(batch, time, head, hidden_dim), past_v=(batch, time, head, hidden_dim)) or None
-        # returns:
-        # attn_matrix = (batch, head, query_time, key_time)
-        # attn_output = (batch, query_time, hidden_dim)
-        # tuple of updated past_kv
 
         batch, time, _ = queries.shape
+        query_heads = self.query_proj(queries).reshape(batch, time, self.heads, self.attn_dim)
         key_heads = self.key_proj(keys).reshape(batch, time, self.heads, self.attn_dim)
         val_heads = self.val_proj(values).reshape(batch, time, self.heads, self.attn_dim)
-        query_heads = self.query_proj(values).reshape(batch, time, self.heads, self.attn_dim)
+        
         if past_kv is not None:
             past_k, past_v = past_kv
             key_heads = torch.cat([past_k, key_heads], dim=1)
             val_heads = torch.cat([past_v, val_heads], dim=1)
-        attn_matrix = F.softmax((torch.einsum('bqhd,bkhd->hbqk', query_heads, key_heads)
-                                 / math.sqrt(self.attn_dim)).masked_fill(mask, float('-inf')), dim=-1)
-        attn_matrix = self.dropout(attn_matrix.transpose(0, 1).contiguous())
-        combined_vals = torch.einsum('bkhd,bhqk->bqhd', val_heads, attn_matrix).reshape(batch, time, self.attn_dim*self.heads)
-        attn_output = self.output_proj(combined_vals)
-        return attn_output, attn_matrix, (key_heads, val_heads)
+        
+        # Transpose to [batch, heads, seq_len, attn_dim] for scaled_dot_product_attention
+        query_heads = query_heads.transpose(1, 2)
+        key_heads = key_heads.transpose(1, 2)
+        val_heads = val_heads.transpose(1, 2)
+        
+        # Ensure mask has correct shape for scaled_dot_product_attention
+        #if mask is not None and mask.dim() == 3:
+        #    mask = mask.unsqueeze(1).expand(-1, self.heads, -1, -1)
+        
+        # Use scaled_dot_product_attention
+        attn_output = F.scaled_dot_product_attention(
+            query_heads, key_heads, val_heads,
+            #attn_mask=mask,
+            dropout_p=self.dropout if self.training else 0.0,
+            scale=1.0 / math.sqrt(self.attn_dim),
+            is_causal=True,
+            enable_gqa=True
+        )
+        
+        # Reshape back to original dimensions
+        attn_output = attn_output.transpose(1, 2).contiguous().view(batch, time, self.attn_dim*self.heads)
+        attn_output = self.output_proj(attn_output)
+        
+        return attn_output, (key_heads, val_heads)
 
 class TransformerBlock(nn.Module):
     def __init__(self, heads, hidden_dim, attn_dim, intermediate_dim, dropout=0.1, pre_norm=True):
@@ -56,18 +71,18 @@ class TransformerBlock(nn.Module):
 
     def forward(self, x, attn_mask, past_kv=None):
         if not self.pre_norm:
-            attn_output, attn_matrix, past_kv = self.attn(x, x, x, attn_mask, past_kv=past_kv)
+            attn_output, past_kv = self.attn(x, x, x, attn_mask, past_kv=past_kv)
             x = self.layer_norm1(self.dropout1(attn_output) + x)
             mlp_out = self.ff2(self.dropout2(F.gelu(self.ff1(x))))
             x = self.layer_norm2(self.dropout3(mlp_out) + x)
         else:
             x_norm1 = self.layer_norm1(x)
-            attn_output, attn_matrix, past_kv = self.attn(x_norm1, x_norm1, x_norm1, attn_mask, past_kv=past_kv)
+            attn_output, past_kv = self.attn(x_norm1, x_norm1, x_norm1, attn_mask, past_kv=past_kv)
             x = self.dropout1(attn_output) + x
             x_norm2 = self.layer_norm2(x)
             mlp_out = self.ff2(self.dropout2(F.gelu(self.ff1(x_norm2))))
             x = self.dropout3(mlp_out) + x
-        return x, attn_matrix, past_kv
+        return x, past_kv # attn_matrix,
 
 class Transformer(nn.Module):
     def __init__(self, vocab_size, max_length, heads, hidden_dim, attn_dim, intermediate_dim, num_blocks, block_repeats, output_size, dropout=0.1, pre_norm=True):
@@ -91,7 +106,7 @@ class Transformer(nn.Module):
         # attn_mask = (batch, query_time, key_time)
         # past_kvs = list of past_kvs for each layer
 
-        attns = []
+        #attns = []
         new_past_kvs = []
         initial_pos = 0
         if past_kvs is not None:
@@ -101,13 +116,13 @@ class Transformer(nn.Module):
         step = 0
         for _ in range(self.block_repeats):
             for i in range(len(self.transformer_blocks)):
-                x, attn, past_kv = self.transformer_blocks[i](x, attn_mask, past_kv=past_kvs[step] if past_kvs is not None else None)
-                attns.append(attn)
+                x, past_kv = self.transformer_blocks[i](x, attn_mask, past_kv=past_kvs[step] if past_kvs is not None else None)
+                #attns.append(attn)
                 new_past_kvs.append(past_kv)
                 step += 1
         if self.pre_norm:
             x = self.norm(x)
-        return self.output(x), attns, new_past_kvs
+        return self.output(x), new_past_kvs
 
 def xavier_init(model):
     for p in model.parameters():

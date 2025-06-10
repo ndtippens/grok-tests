@@ -16,5 +16,5 @@ class GrokkModel(nn.Module):
     
     def forward(self, x):
         attn_mask = causal_attn_mask(x.shape[1]).unsqueeze(0).repeat(x.shape[0], 1, 1).to(self.device)
-        predictions, attns, _ = self.transformer(x, attn_mask)
-        return predictions, attns
+        predictions, _ = self.transformer(x, attn_mask)
+        return predictions

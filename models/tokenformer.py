@@ -4,8 +4,6 @@ import torch.nn.functional as F
 import math
 
 from torch_circuit import Circuit, SaveInput, GetInput, StartBlock, EndBlock
-from utils.BitLinear import BitLinear
-
 
 class ParametricAttention(nn.Module):
     """Parametric attention mechanism for tokenformer."""
@@ -18,8 +16,8 @@ class ParametricAttention(nn.Module):
         self.norm_type = norm_type
 
         # Use Linear layers instead of direct parameters
-        self.key_projection = BitLinear(input_dim, param_token_num, bias=False)
-        self.value_projection = BitLinear(param_token_num, output_dim, bias=False)
+        self.key_projection = nn.Linear(input_dim, param_token_num, bias=False)
+        self.value_projection = nn.Linear(param_token_num, output_dim, bias=False)
         
         # Initialize weights
         nn.init.xavier_normal_(self.key_projection.weight)
@@ -160,7 +158,7 @@ class Tokenformer(nn.Module):
         )
 
         # Output projection (same as GPT-2)
-        self.lm_head = BitLinear(d_model, vocab_size, bias=False)
+        self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
 
         # Tie weights between token embedding and lm_head (like GPT-2)
         self.lm_head.weight = self.token_embedding.weight
@@ -170,7 +168,7 @@ class Tokenformer(nn.Module):
 
     def _init_weights(self, module):
         """Initialize weights following GPT-2 initialization."""
-        if isinstance(module, BitLinear):
+        if isinstance(module, nn.Linear):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)

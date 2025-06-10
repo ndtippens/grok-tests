@@ -4,7 +4,6 @@ import torch.nn as nn
 # Import Circuit and attention layers
 from torch_circuit import Circuit, SaveInput, GetInput, StartBlock, EndBlock
 from layers.resv_attention import ResVAttention
-from utils.BitLinear import BitLinear
 
 
 class GPT2ResVModel(nn.Module):
@@ -38,7 +37,7 @@ class GPT2ResVModel(nn.Module):
         self.token_embedding = nn.Embedding(vocab_size, d_model)
         # For SVFormer: create a shared value projection
         if share_values:
-            self.shared_value_proj = BitLinear(d_model, d_model, bias=False)
+            self.shared_value_proj = nn.Linear(d_model, d_model, bias=False)
             nn.init.normal_(self.shared_value_proj.weight, mean=0.0, std=0.02)
         
         # Build the transformer circuit
@@ -59,9 +58,9 @@ class GPT2ResVModel(nn.Module):
             # Feed-forward block with residual
             SaveInput("ff_residual"),
             nn.LayerNorm(d_model),
-            BitLinear(d_model, d_ff),
+            nn.Linear(d_model, d_ff),
             nn.GELU(),
-            BitLinear(d_ff, d_model),
+            nn.Linear(d_ff, d_model),
             GetInput("ff_residual", op=torch.add),
             nn.Dropout(dropout),
 
@@ -72,7 +71,7 @@ class GPT2ResVModel(nn.Module):
         )
         
         # Output projection
-        self.lm_head = BitLinear(d_model, vocab_size, bias=False)
+        self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
         
         # Tie weights between token embedding and lm_head (like GPT-2)
         self.lm_head.weight = self.token_embedding.weight
@@ -83,7 +82,7 @@ class GPT2ResVModel(nn.Module):
     
     def _init_weights(self, module):
         """Initialize weights following GPT-2 initialization."""
-        if isinstance(module, BitLinear):
+        if isinstance(module, nn.Linear):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)
