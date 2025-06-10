@@ -29,7 +29,7 @@ class MultiHeadAttention(nn.Module):
         batch, time, _ = queries.shape
         key_heads = self.key_proj(keys).reshape(batch, time, self.heads, self.attn_dim)
         val_heads = self.val_proj(values).reshape(batch, time, self.heads, self.attn_dim)
-        query_heads = self.query_proj(values).reshape(batch, time, self.heads, self.attn_dim)
+        query_heads = self.query_proj(queries).reshape(batch, time, self.heads, self.attn_dim)
         if past_kv is not None:
             past_k, past_v = past_kv
             key_heads = torch.cat([past_k, key_heads], dim=1)
