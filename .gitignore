@@ -3,3 +3,6 @@
 __pycache__/
 wandb/
 outputs/
+results/
+runs/
+scripts/runs/

@@ -45,7 +45,7 @@ def find_grokking_point(accuracy_data: pd.DataFrame, threshold: float = 0.99) ->
 
 def analyze_experiment(results_dir: str, experiment_name: str) -> Dict:
     """Analyze a single experiment."""
-    log_dir = os.path.join(results_dir, f"{experiment_name}_tensorboard")
+    log_dir = os.path.join(results_dir, f"{experiment_name}")
     
     if not os.path.exists(log_dir):
         print(f"Warning: Log directory not found: {log_dir}")
