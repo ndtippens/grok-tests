@@ -5,7 +5,7 @@ import numpy as np
 from collections import defaultdict
 import math
 
-def causal_attn_mask(seq_len, device=torch.device('cpu')):
+def causal_attn_mask(seq_len, device=torch.device('mps')):
     # seq_len = length of sequence
     # returns: (seq_len, seq_len)
     return torch.tensor(np.triu(np.ones((seq_len, seq_len)), k=1) == 1).to(device)
