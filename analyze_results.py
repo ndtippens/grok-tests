@@ -43,7 +43,7 @@ def find_grokking_point(accuracy_data: pd.DataFrame, threshold: float = 0.99) ->
         return val_acc.iloc[0]['step']
     return -1  # Grokking not achieved
 
-def analyze_experiment(results_dir: str, experiment_name: str) -> Dict:
+def analyze_experiment(results_dir: str, experiment_name: str) -> Dict | None:
     """Analyze a single experiment."""
     log_dir = os.path.join(results_dir, f"{experiment_name}")
     
@@ -91,7 +91,7 @@ def create_comparison_plots(experiments: List[Dict], output_dir: str):
     
     # Create figure with subplots
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
-    fig.suptitle('Grokking Experiments: L1 Loss and Grokfast Effects', fontsize=16)
+    fig.suptitle('Grokking Experiments: Grokfast Effects', fontsize=16)
     
     # Plot 1: Validation Accuracy
     ax1 = axes[0, 0]
@@ -201,7 +201,7 @@ def main():
     parser = argparse.ArgumentParser(description='Analyze grokking experiment results')
     parser.add_argument('--results-dir', default='results', 
                        help='Directory containing experiment results')
-    parser.add_argument('--output-dir', default='analysis', 
+    parser.add_argument('--output-dir', default='results', 
                        help='Directory to save analysis outputs')
     
     args = parser.parse_args()
@@ -210,14 +210,8 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     
     # List of experiments to analyze
-    experiment_names = [
-        'baseline',
-        'l1_only',
-        'grokfast_only', 
-        'grokfast_ma_only',
-        'l1_plus_grokfast',
-        'l1_plus_grokfast_ma'
-    ]
+    experiment_names = os.listdir(args.results_dir)
+    experiment_names = [exp for exp in experiment_names if os.path.isdir(os.path.join(args.results_dir, exp))]
     
     print("Analyzing grokking experiments...")
     

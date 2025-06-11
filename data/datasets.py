@@ -81,28 +81,36 @@ class PermutationGroup(AbstractDataset):
     def fetch_output(self, a, b):
         return tuple([a[b[i]] for i in range(len(b))])
 
-class VarBindingDataset:
-    def __init__(self, csv_path, group_elements1=None, group_elements2=None, frac_train=0.5):
+class VarBindingDataset(AbstractDataset):
+    def __init__(self, csv_path, frac_train=0.5):
         self.csv_path = csv_path
         self.sequences = self._load_sequences()
-        self.frac_train = frac_train
 
         # Extract all variables and values from the sequences
         all_vars = set()
         all_values = set()
 
-        for seq in self.sequences[:100]:
-            tokens = list(seq)
-            for token in tokens:
-                if token.isalpha():
-                    all_vars.add(token)
-                else:
-                    all_values.add(token)
+        for seq in self.sequences:
+            # Parse the sequence to extract variables and values
+            assignments = seq.split(',')
+            for assignment in assignments:
+                if '=' in assignment:
+                    var, val = assignment.split('=')
+                    all_vars.add(var)
+                    all_values.add(val)
 
-        self.idx2vocab = all_vars.union(all_values)
+        # Initialize parent class with dummy group elements (not used for this dataset)
+        super(VarBindingDataset, self).__init__(set(), set(), frac_train)
+
+        # Override the vocabulary and other attributes set by parent class
+        self.idx2vocab = ['='] + sorted(list(all_vars)) + sorted(list(all_values))
         self.vocab2idx = {vocab: idx for idx, vocab in enumerate(self.idx2vocab)}
         self.n_vocab = len(self.idx2vocab)
         self.n_out = len(all_values)
+
+
+
+        # Override the pairs with our sequence indices
         idxs = list(range(len(self.sequences)))
         random.shuffle(idxs)
         self.train_pairs, self.val_pairs = idxs[:int(len(idxs)*frac_train)], idxs[int(len(idxs)*frac_train):]
@@ -112,26 +120,37 @@ class VarBindingDataset:
         sequences = []
 
         with open(self.csv_path, 'r') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if not row:  # Skip empty rows
-                    continue
-
-                sequences.append(row[0])
+            for line in f:
+                line = line.strip()
+                if line:  # Skip empty lines
+                    sequences.append(line)
 
         return sequences
 
-    def encode(self, sequence):
-        return [self.vocab2idx[item] for item in sequence]
+    def _parse_sequence(self, sequence_str):
+        """Parse a sequence string into tokens."""
+        assignments = sequence_str.split(',')
+        tokens = []
+        for assignment in assignments:
+            if '=' in assignment:
+                var, val = assignment.split('=')
+                tokens.extend([var, '=', val])
+        return tokens
 
-    def fetch_train_example(self):
-        idx = random.choice(self.train_pairs)
-        return self.fetch_example(idx)
-
-    def fetch_val_example(self):
-        idx = random.choice(self.val_pairs)
-        return self.fetch_example(idx)
+    def fetch_output(self, a, b):
+        # This method is required by AbstractDataset but not used in our implementation
+        return None
 
     def fetch_example(self, idx):
-        sequence = self.sequences[idx]
-        return self.encode(sequence[:-1]), self.vocab2idx[sequence[-1]], None
+        sequence_str = self.sequences[idx]
+        tokens = self._parse_sequence(sequence_str)
+
+        # Use all tokens except the last value as input, last value as target
+        input_tokens = tokens[:-1]
+        target_token = tokens[-1]
+
+        # Encode the tokens
+        encoded_input = [self.vocab2idx[token] for token in input_tokens]
+        target_idx = self.vocab2idx[target_token]
+
+        return encoded_input, target_idx, tokens

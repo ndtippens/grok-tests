@@ -1,0 +1,48 @@
+# Example configuration demonstrating SPlus optimizer usage
+# SPlus requires calling optimizer.train() before training steps and optimizer.eval() before evaluation
+
+dataset:
+  name: varbinding_dataset
+  csv_path: data/dataset/varbinding_10000.csv
+  frac_train: 0.5
+
+model:
+  name: gpt2_meta
+  d_model: 128
+  num_heads: 4
+  num_layers: 2
+  d_ff: 512
+  max_seq_len: 200
+  dropout: 0.1
+
+train:
+  num_workers: 0
+  bsize: 32
+  lr: 0.01  # SPlus typically works well with higher learning rates than AdamW
+  weight_decay: 0.01
+  betas: [0.9, 0.999]  # These will be mapped to b1, b2 for SPlus
+  warmup_steps: 10
+  eval_every: 100
+  eval_batches: 8
+  max_steps: 1000
+  use_grokfast: true
+  grokfast_type: ma  # Use MA variant as per user preference
+  grokfast_window_size: 100
+  grokfast_lamb: 2.0
+  
+  # SPlus optimizer configuration
+  optimizer:
+    name: splus
+    lr: 0.01                    # Learning rate
+    b1: 0.9                     # First moment decay rate (similar to beta1 in Adam)
+    b2: 0.999                   # Second moment decay rate (similar to beta2 in Adam)
+    weight_decay: 0.01          # Weight decay coefficient
+    ema_rate: 0.999             # EMA rate for evaluation parameters
+    inverse_every: 100          # How often to update eigendecomposition
+    eps: 1e-30                  # Small constant for numerical stability
+    max_dim: 10000              # Maximum dimension for eigendecomposition
+    nonstandard_constant: 0.001 # Scaling constant for non-2D parameters
+
+tensorboard:
+  use_tensorboard: true
+  log_dir: results/splus_example/tensorboard

@@ -12,17 +12,16 @@ import torch.nn.functional as F
 
 def grokk_loss_fn(model, x, y):
     predictions = model(x)
-    ce_loss = F.cross_entropy(predictions[:, -1, :], y)
+    loss = F.cross_entropy(predictions[:, -1, :], y)
     param_norm = parameter_norm(model)
-    loss = ce_loss
     accuracy = (torch.argmax(predictions[:, -1, :], dim=-1) == y).float().mean()
     #attn_entropies = sum([-(attn * torch.log(attn+1e-7)).sum(dim=-1).mean().item() for attn in attns]) / len(attns)
     return loss, {
         'loss': (loss.item(), x.shape[0]),
-        'ce_loss': (ce_loss.item(), x.shape[0]),
+        #'ce_loss': (ce_loss.item(), x.shape[0]),
         'accuracy': (accuracy.item(), x.shape[0]),
         #'attn_entropy': (attn_entropies, len(attns)*x.shape[0]*(x.shape[1]-1)),
-        'param_norm': (param_norm, 1)
+        #'param_norm': (param_norm, 1)
     }
 
 class GroupDataset(IterableDataset):
@@ -63,10 +62,28 @@ def train(config):
     model.train()
     train_dataloader = DataLoader(train_data, num_workers=train_cfg['num_workers'], batch_size=train_cfg['bsize'])
     val_dataloader = DataLoader(val_data, num_workers=train_cfg['num_workers'], batch_size=train_cfg['bsize'])
-    optim = torch.optim.AdamW(model.parameters(), lr=train_cfg['lr'], 
-                              weight_decay=train_cfg['weight_decay'], 
-                              betas=train_cfg['betas'])
+
+    # Load optimizer based on configuration
+    optimizer_config = train_cfg.get('optimizer', {'name': 'adamw'})
+    if optimizer_config['name'] == 'adamw':
+        # Backward compatibility: use existing parameters if no optimizer config
+        optim = torch.optim.AdamW(model.parameters(), lr=train_cfg['lr'],
+                                  weight_decay=train_cfg['weight_decay'],
+                                  betas=train_cfg['betas'])
+    else:
+        # Use the registry to load the optimizer
+        optimizer_config_copy = optimizer_config.copy()
+        optimizer_config_copy.update({
+            'lr': train_cfg.get('lr', optimizer_config.get('lr', 0.001)),
+            'weight_decay': train_cfg.get('weight_decay',optimizer_config.get('weight_decay', 0.01)),
+            'betas': train_cfg.get('betas', optimizer_config.get('betas', [0.9, 0.999]))
+        })
+        optim = load_item(optimizer_config_copy, model.parameters())
+
     lr_schedule = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda s: min(s / train_cfg['warmup_steps'], 1))
+
+    # Check if optimizer has special train/eval methods (like SPlus)
+    has_train_eval_methods = hasattr(optim, 'train') and hasattr(optim, 'eval')
 
     # Initialize grads for Grokfast based on type
     use_grokfast = train_cfg.get('use_grokfast', True)
@@ -75,6 +92,11 @@ def train(config):
     grads_ma = None   # For MA grokfast
     step = 0
     for x, y in tqdm(train_dataloader):
+        # Set optimizer to training mode (important for SPlus)
+        if has_train_eval_methods:
+            optim.train()
+        model.train()
+
         loss, logs = grokk_loss_fn(model, x.to(device), y.to(device))
         optim.zero_grad()
         loss.backward()  # Calculate the gradients.
@@ -94,6 +116,9 @@ def train(config):
         optim.step()  # Call the optimizer.
         lr_schedule.step()
         if (step+1) % train_cfg['eval_every'] == 0:
+            # Set optimizer to evaluation mode (important for SPlus)
+            if has_train_eval_methods:
+                optim.eval()
             model.eval()
             with torch.no_grad():
                 all_val_logs = []
@@ -104,8 +129,11 @@ def train(config):
                     all_val_logs.append(val_logs)
             val_combined = combine_logs(all_val_logs)
             train_combined = combine_logs([logs])
-            out_log = {'val': val_combined, 'train': train_combined, 'step': (step+1), 
-                       'lr': float(lr_schedule.get_last_lr()[0])}
+            out_log = {'val': val_combined,
+                       'train': train_combined,
+                       'step': (step+1), 
+                       'lr': float(lr_schedule.get_last_lr()[0])
+                       }
             print(out_log)
             
             # Log metrics to TensorBoard
@@ -123,7 +151,10 @@ def train(config):
                 for k in val_combined:
                     if k not in ['loss', 'accuracy']:
                         writer.add_scalar(f'Metrics_val/{k}', val_combined[k], step+1)
-            
+
+            # Return to training mode
+            if has_train_eval_methods:
+                optim.train()
             model.train()
         step += 1
         if train_cfg['max_steps'] is not None and step >= train_cfg['max_steps']:

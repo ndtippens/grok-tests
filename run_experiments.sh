@@ -44,8 +44,8 @@ print_header() {
 }
 
 # Check if we're in the right directory
-if [ ! -f "train_grokk.py" ]; then
-    print_error "Error: train_grokk.py not found. Please run this script from the grokking repository root."
+if [ ! -f "run.py" ]; then
+    print_error "Error: run.py not found. Please run this script from the grokking repository root."
     exit 1
 fi
 
@@ -166,7 +166,7 @@ run_experiment() {
     print_info "TensorBoard logs: ${tensorboard_dir}"
 
     # Run the experiment with output redirection and Hydra config to disable outputs dir
-    if python train_grokk.py --config-name="$exp_name" tensorboard.log_dir="$tensorboard_dir" hydra.run.dir="$result_dir" hydra.output_subdir=null > "$log_file" 2>&1; then
+    if python run.py --config-name="$exp_name" tensorboard.log_dir="$tensorboard_dir" hydra.run.dir="$result_dir" hydra.output_subdir=null > "$log_file" 2>&1; then
         local end_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
         print_success "Completed experiment: ${exp_desc}"
         save_experiment_metadata "$exp_name" "$exp_desc" "$model_type" "$start_time" "$end_time" "completed"

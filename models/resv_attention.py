@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from models.positionals import RotaryPositionalEmbedding
-from utils.BitLinear import BitLinear
 
 
 def norm(x: torch.Tensor):
@@ -22,7 +21,7 @@ class ResVAttention(nn.Module):
         self.qkv_w = nn.Parameter(torch.empty(3, hdim, dim).uniform_(-bound, bound))
         self.lambdas = nn.Parameter(torch.tensor([0.5, 0.5]))
         self.rotary = RotaryPositionalEmbedding(head_dim, max_seq_len)
-        self.c_proj = BitLinear(hdim, dim)
+        self.c_proj = nn.Linear(hdim, dim)
         self.c_proj.weight.detach().zero_() # zero init suggested by @Grad62304977
 
     def forward(self,
